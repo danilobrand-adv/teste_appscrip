@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Painel de Ofícios com Gráficos</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background-color: #e9eff5;
+        color: #333;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        min-height: 100vh;
+    }
+    .container {
+        max-width: 960px;
+        width: 100%;
+        background: #ffffff;
+        padding: 30px;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        box-sizing: border-box;
+    }
+    h1, h2 {
+        color: #2c3e50;
+        text-align: center;
+        margin-bottom: 25px;
+        font-weight: 600;
+    }
+    h2 {
+        border-bottom: 2px solid #e0e7eb;
+        padding-bottom: 10px;
+        margin-top: 30px;
+    }
+    hr {
+        border: 0;
+        height: 1px;
+        background-color: #ddd;
+        margin: 40px 0;
+    }
+    .form-section, .query-section, .chart-section {
+        margin-bottom: 40px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fcfcfc;
+        box-shadow: 0 1px 5px rgba(0,0,0,0.05);
+    }
+    .form-group {
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+    }
+    .form-group label {
+        margin-bottom: 8px;
+        font-weight: bold;
+        color: #555;
+    }
+    .form-group input[type="text"],
+    .form-group input[type="date"],
+    .form-group textarea,
+    .form-group select {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 1em;
+        transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    .form-group input[type="text"]:focus,
+    .form-group input[type="date"]:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+        outline: none;
+    }
+    .form-group textarea {
+        resize: vertical;
+        min-height: 100px;
+    }
+    .btn-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .btn {
+        flex: 1;
+        padding: 12px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1em;
+        font-weight: 600;
+        transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: translateY(-1px);
+    }
+    .btn-secondary {
+        background-color: #6c757d;
+        color: white;
+    }
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        transform: translateY(-1px);
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+        transform: translateY(-1px);
+    }
+    .message {
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 8px;
+        font-weight: bold;
+        display: flex;
+        align-items: center;
+    }
+    .message.success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+    .message.error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+    .message::before {
+        font-weight: bold;
+        margin-right: 10px;
+        font-size: 1.2em;
+        width: 25px;
+        height: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(255,255,255,0.3);
+    }
+    .message.success::before { content: '✓'; background-color: #28a745; color: white; }
+    .message.error::before { content: '✕'; background-color: #dc3545; color: white; }
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 25px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    table th, table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #dee2e6;
+    }
+    table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        text-transform: uppercase;
+        font-size: 0.9em;
+    }
+    table tr:last-child td { border-bottom: none; }
+    table tbody tr:hover { background-color: #f2f6fa; }
+
+    .actions button {
+        margin-right: 8px;
+        padding: 8px 12px;
+        font-size: 0.9em;
+    }
+    .filter-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 25px;
+        flex-wrap: wrap;
+    }
+    .filter-bar input, .filter-bar select {
+        flex: 1;
+        min-width: 150px;
+    }
+    .filter-bar button {
+        padding: 10px 15px;
+        flex-shrink: 0;
+    }
+
+    /* Estilos específicos para a lista de ofícios (query-section) */
+    .oficio-list {
+        list-style: none;
+        padding: 0;
+    }
+    .oficio-item {
+        background-color: #fff;
+        border: 1px solid #eee;
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 8px; /* Mais arredondado */
+        display: flex;
+        flex-wrap: wrap; /* Permite que os itens quebrem linha */
+        justify-content: space-between;
+        align-items: flex-start; /* Alinha itens ao topo */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .oficio-item div {
+        flex-grow: 1;
+        padding-right: 15px; /* Espaçamento entre o conteúdo e os botões */
+    }
+    .oficio-item strong {
+        color: #0056b3;
+    }
+    .oficio-item span {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.9em;
+        color: #555;
+    }
+    .oficio-item .item-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px; /* Espaçamento se os botões ficarem abaixo */
+        flex-shrink: 0; /* Não permite que os botões encolham */
+    }
+    .oficio-item .item-actions button {
+        font-size: 0.85em; /* Botões menores na lista */
+        padding: 8px 12px;
+    }
+    .empty-state {
+        text-align: center;
+        color: #888;
+        padding: 20px;
+        border: 1px dashed #ccc;
+        border-radius: 5px;
+        margin-top: 20px;
+        background-color: #fff;
+    }
+    .chart-container {
+        width: 100%; /* Ocupa toda a largura do container pai */
+        max-width: 600px; /* Limite o tamanho do gráfico */
+        margin: 20px auto;
+        padding: 15px;
+        background-color: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+
+    /* Responsividade */
+    @media (max-width: 768px) {
+        .container {
+            margin: 10px;
+            padding: 15px;
+        }
+        .btn-group {
+            flex-direction: column;
+        }
+        .filter-bar {
+            flex-direction: column;
+        }
+        .filter-bar input, .filter-bar select, .filter-bar button {
+            width: 100%;
+            min-width: unset;
+        }
+        /* Para a lista de ofícios (ul), muda a forma como os itens se apresentam */
+        .oficio-item {
+            flex-direction: column; /* Conteúdo e botões empilhados */
+            align-items: stretch; /* Estica os itens para preencher a largura */
+        }
+        .oficio-item div {
+            padding-right: 0; /* Remove padding lateral */
+            margin-bottom: 10px; /* Espaçamento entre conteúdo e botões */
+        }
+        .oficio-item .item-actions {
+            flex-direction: column; /* Botões empilhados */
+            width: 100%; /* Ocupa toda a largura */
+            gap: 5px;
+        }
+        .oficio-item .item-actions button {
+            width: 100%; /* Estica botões */
+        }
+    }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Sistema de Controle de Ofícios</h1>
+
+    <div id="message" class="message" style="display:none;"></div>
+
+    <hr>
+
+    <div class="form-section">
+        <h2>Cadastrar / Editar Ofício</h2>
+        <form id="oficioForm">
+            <input type="hidden" id="idLinha" value="">
+
+            <div class="form-group">
+                <label for="numero">Nº Ofício:</label>
+                <input type="text" id="numero" required readonly title="O número do ofício é gerado automaticamente.">
+            </div>
+            <div class="form-group">
+                <label for="data">Data:</label>
+                <input type="date" id="data" required>
+            </div>
+            <div class="form-group">
+                <label for="secretaria">SECRETARIA (Remetente / Destinatário):</label>
+                <select id="secretaria">
+                    <option value="">-- Selecione --</option>
+                      <option value="saude">Secretaria de Saúde</option>
+                      <option value="educacao">Secretaria de Educação</option>
+                      <option value="financas">Secretaria de Finanças</option>
+                      <option value="administracao">Secretaria de Administração</option>
+                      <option value="obras">Secretaria de Obras e Serviços Públicos</option>
+                    </select>
+            </div>
+            <div class="form-group">
+                <label for="assunto">Assunto / Observações:</label>
+                <textarea id="assunto" required></textarea>
+            </div>
+            <div class="form-group">
+                <label for="situacao">SITUAÇÃO:</label>
+                <select id="situacao">
+                    <option value="">-- Selecione --</option>
+                    </select>
+            </div>
+            <div class="form-group">
+                <label for="situacaoFinal">SITUAÇÃO FINAL:</label>
+                <select id="situacaoFinal">
+                    <option value="">-- Selecione --</option>
+                    </select>
+            </div>
+            <div class="form-group">
+                <label for="categoria">CATEGORIA:</label>
+                <select id="categoria">
+                    <option value="">-- Selecione --</option>
+                    </select>
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" class="btn btn-primary">Salvar Ofício</button>
+                <button type="button" class="btn btn-secondary" onclick="limparFormulario()">Novo Ofício</button>
+            </div>
+        </form>
+    </div>
+
+    <hr>
+
+
+        <div class="query-section">
+    <h2>Consultar Ofícios</h2>
+    <div class="filter-bar">
+        <input type="text" id="termoPesquisa" placeholder="Pesquisar por número, assunto, secretaria...">
+        <button type="button" class="btn btn-primary" onclick="listarOficios()">Buscar</button> <button type="button" class="btn btn-secondary" onclick="limparPesquisa()">Limpar Pesquisa</button>
+    </div>
+</div>
+        <ul id="oficiosList" class="oficio-list">
+            <li class="empty-state">Carregando ofícios...</li>
+        </ul>
+    </div>
+
+    <hr>
+
+    <div class="chart-section">
+        <h2>Análise Gráfica de Ofícios por Secretaria</h2>
+        <div class="chart-container">
+            <canvas id="oficiosChart"></canvas>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Objeto para armazenar as referências aos elementos HTML, para evitar repetições no código
+    const elements = {
+        messageDiv: document.getElementById('message'),
+        idLinhaInput: document.getElementById('idLinha'),
+        numeroInput: document.getElementById('numero'),
+        dataInput: document.getElementById('data'),
+        secretariaSelect: document.getElementById('secretaria'),
+        assuntoTextarea: document.getElementById('assunto'),
+        situacaoSelect: document.getElementById('situacao'),
+        situacaoFinalSelect: document.getElementById('situacaoFinal'),
+        categoriaSelect: document.getElementById('categoria'),
+        oficiosListUL: document.getElementById('oficiosList'), // Alterado para UL
+        termoPesquisaInput: document.getElementById('termoPesquisa'),
+        oficioForm: document.getElementById('oficioForm'),
+        oficiosChartCanvas: document.getElementById('oficiosChart')
+    };
+
+    let myChart; // Variável para armazenar a instância do gráfico
+
+    // --- Funções de Feedback e UI ---
+    function showMessage(msg, type) {
+        elements.messageDiv.textContent = msg;
+        elements.messageDiv.className = 'message ' + type;
+        elements.messageDiv.style.display = 'flex';
+        setTimeout(() => {
+            elements.messageDiv.style.display = 'none';
+        }, 5000);
+    }
+
+    function toggleLoading(isLoading) {
+        // Implementar um spinner ou desabilitar botões/inputs durante operações
+        // console.log(isLoading ? 'Carregando...' : 'Carregamento completo.');
+        document.body.style.cursor = isLoading ? 'wait' : 'default';
+        const buttons = document.querySelectorAll('button');
+        buttons.forEach(btn => btn.disabled = isLoading);
+        const inputs = document.querySelectorAll('input, select, textarea');
+        inputs.forEach(input => {
+          if (input.id !== 'numero') { // Número deve continuar readonly
+            input.disabled = isLoading;
+          }
+        });
+    }
+
+    // --- Funções de Manipulação do Formulário ---
+    function limparFormulario() {
+        elements.oficioForm.reset();
+        elements.idLinhaInput.value = '';
+
+        toggleLoading(true);
+        google.script.run
+            .withSuccessHandler(nextNum => {
+                elements.numeroInput.value = nextNum;
+                toggleLoading(false);
+            })
+            .withFailureHandler(error => {
+                showMessage('Erro ao gerar próximo número: ' + error.message, 'error');
+                elements.numeroInput.value = 'ERRO';
+                toggleLoading(false);
+            })
+            .getProximoNumeroOficio();
+        
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        elements.dataInput.value = `${yyyy}-${mm}-${dd}`;
+
+        showMessage('Formulário limpo. Pronto para um novo registro.', 'success');
+    }
+
+    // Preenche os dropdowns com opções lidas da planilha "Listas"
+    function popularDropdowns() {
+        toggleLoading(true);
+        google.script.run
+            .withSuccessHandler(opcoes => {
+                function addOptions(selectElement, optionsArray) {
+                    selectElement.innerHTML = '<option value="">-- Selecione --</option>';
+                    optionsArray.forEach(opt => {
+                        var option = document.createElement('option');
+                        option.value = opt;
+                        option.textContent = opt;
+                        selectElement.appendChild(option);
+                    });
+                }
+                addOptions(elements.secretariaSelect, opcoes.secretarias);
+                addOptions(elements.situacaoSelect, opcoes.situacoes);
+                addOptions(elements.situacaoFinalSelect, opcoes.situacoesFinal);
+                addOptions(elements.categoriaSelect, opcoes.categorias);
+                toggleLoading(false);
+            })
+            .withFailureHandler(error => {
+                showMessage('Erro ao carregar opções para dropdowns: ' + error.message, 'error');
+                toggleLoading(false);
+            })
+            .getOpcoesDropdowns();
+    }
+
+    // --- Funções de Manipulação da Lista de Ofícios ---
+    // Refatorada para usar a estrutura UL/LI
+    function listarOficios() {
+        const termo = elements.termoPesquisaInput.value.trim();
+        toggleLoading(true);
+        google.script.run
+            .withSuccessHandler(oficios => {
+                elements.oficiosListUL.innerHTML = ''; // Limpa a lista
+
+                if (oficios.length === 0) {
+                    elements.oficiosListUL.innerHTML = '<li class="empty-state">Nenhum ofício encontrado com este filtro.</li>';
+                    toggleLoading(false);
+                    return;
+                }
+
+                oficios.forEach(oficio => {
+                    const li = document.createElement('li');
+                    li.className = 'oficio-item';
+                    li.innerHTML = `
+                        <div>
+                            <strong>Nº Ofício:</strong> ${oficio.numero}<br>
+                            <span><strong>Data:</strong> ${oficio.data}</span>
+                            <span><strong>SECRETARIA:</strong> ${oficio.secretaria}</span>
+                            <span><strong>Assunto:</strong> ${oficio.assunto}</span>
+                            <span><strong>Situação:</strong> ${oficio.situacao}</span>
+                            <span><strong>Situação Final:</strong> ${oficio.situacaoFinal}</span>
+                            <span><strong>Categoria:</strong> ${oficio.categoria}</span>
+                        </div>
+                        <div class="item-actions">
+                            <button type="button" class="btn btn-primary" onclick="carregarOficioParaEdicao(${oficio.idLinha})">Editar</button>
+                            <button type="button" class="btn btn-danger" onclick="confirmarApagarOficio(${oficio.idLinha}, '${oficio.numero}')">Apagar</button>
+                        </div>
+                    `;
+                    elements.oficiosListUL.appendChild(li);
+                });
+                toggleLoading(false);
+            })
+            .withFailureHandler(error => {
+                showMessage('Erro ao listar ofícios: ' + error.message, 'error');
+                elements.oficiosListUL.innerHTML = '<li class="empty-state">Erro ao carregar dados.</li>';
+                toggleLoading(false);
+            })
+            .listarOficios(termo);
+    }
+
+    // Limpa o campo de pesquisa e recarrega a lista
+    function limparPesquisa() {
+        elements.termoPesquisaInput.value = '';
+        listarOficios();
+    }
+
+    // Carrega os dados de um ofício para o formulário de edição
+    function carregarOficioParaEdicao(idLinha) {
+        toggleLoading(true);
+        google.script.run
+            .withSuccessHandler(oficio => {
+                if (oficio) {
+                    elements.idLinhaInput.value = oficio.idLinha;
+                    elements.numeroInput.value = oficio.numero;
+                    elements.dataInput.value = oficio.data; // Formato YYYY-MM-DD para input date
+                    elements.secretariaSelect.value = oficio.secretaria;
+                    elements.assuntoTextarea.value = oficio.assunto;
+                    elements.situacaoSelect.value = oficio.situacao;
+                    elements.situacaoFinalSelect.value = oficio.situacaoFinal;
+                    elements.categoriaSelect.value = oficio.categoria;
+                    showMessage('Ofício Nº ' + oficio.numero + ' carregado para edição.', 'success');
+                } else {
+                    showMessage('Ofício não encontrado para o ID fornecido.', 'error');
+                }
+                toggleLoading(false);
+            })
+            .withFailureHandler(error => {
+                showMessage('Erro ao carregar ofício para edição: ' + error.message, 'error');
+                toggleLoading(false);
+            })
+            .getOficioById(idLinha);
+    }
+
+    // Confirmação e chamada para apagar o ofício
+    function confirmarApagarOficio(idLinha, numeroOficio) {
+        if (confirm('Tem certeza que deseja apagar o Ofício Nº ' + numeroOficio + '? Esta ação não pode ser desfeita.')) {
+            toggleLoading(true);
+            google.script.run
+                .withSuccessHandler(response => {
+                    showMessage(response, 'success');
+                    listarOficios(elements.termoPesquisaInput.value); // Atualiza a lista
+                    limparFormulario(); // Limpa o formulário
+                    updateChartData(); // Atualiza o gráfico
+                    toggleLoading(false);
+                })
+                .withFailureHandler(error => {
+                    showMessage('Erro ao apagar ofício: ' + error.message, 'error');
+                    toggleLoading(false);
+                })
+                .apagarOficio(idLinha);
+        }
+    }
+
+    // --- Funções de Gráfico (Chart.js) ---
+    function updateChartData() {
+        toggleLoading(true);
+        google.script.run
+            .withSuccessHandler(data => {
+                renderChart(data.labels, data.data);
+                toggleLoading(false);
+            })
+            .withFailureHandler(error => {
+                showMessage('Erro ao carregar dados para o gráfico: ' + error.message, 'error');
+                toggleLoading(false);
+            })
+            .getDadosParaGrafico();
+    }
+
+    function renderChart(labels, data) {
+        const ctx = elements.oficiosChartCanvas.getContext('2d');
+        if (myChart) {
+            myChart.destroy(); // Destrói o gráfico existente antes de criar um novo
+        }
+
+        myChart = new Chart(ctx, {
+            type: 'bar', // Tipo de gráfico: barras
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Número de Ofícios por Secretaria',
+                    data: data,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(75, 192, 192, 0.7)',
+                        'rgba(153, 102, 255, 0.7)',
+                        'rgba(255, 159, 64, 0.7)',
+                        'rgba(199, 199, 199, 0.7)',
+                        'rgba(83, 102, 255, 0.7)',
+                        'rgba(40, 159, 64, 0.7)',
+                        'rgba(201, 203, 207, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(75, 192, 192, 1)',
+                        'rgba(153, 102, 255, 1)',
+                        'rgba(255, 159, 64, 1)',
+                        'rgba(199, 199, 199, 1)',
+                        'rgba(83, 102, 255, 1)',
+                        'rgba(40, 159, 64, 1)',
+                        'rgba(201, 203, 207, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false, // Importante para controlar o tamanho do gráfico
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Número de Ofícios'
+                        },
+                        ticks: {
+                            precision: 0 // Garante que os ticks sejam números inteiros
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Secretaria'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false // Oculta a legenda do dataset, pois já está no título
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.raw;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- Event Listener para Envio do Formulário ---
+    elements.oficioForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        var oficio = {
+            idLinha: elements.idLinhaInput.value || null,
+            numero: elements.numeroInput.value,
+            data: elements.dataInput.value,
+            secretaria: elements.secretariaSelect.value,
+            assunto: elements.assuntoTextarea.value,
+            situacao: elements.situacaoSelect.value,
+            situacaoFinal: elements.situacaoFinalSelect.value,
+            categoria: elements.categoriaSelect.value
+        };
+
+        toggleLoading(true);
+        google.script.run
+            .withSuccessHandler(response => {
+                showMessage(response, 'success');
+                listarOficios(elements.termoPesquisaInput.value); // Atualiza a lista
+                limparFormulario(); // Prepara para um novo registro
+                updateChartData(); // Atualiza o gráfico
+                toggleLoading(false);
+            })
+            .withFailureHandler(error => {
+                showMessage('Erro ao salvar ofício: ' + error.message, 'error');
+                toggleLoading(false);
+            })
+            .salvarOficio(oficio);
+    });
+
+    // --- Funções a serem executadas quando a página HTML é totalmente carregada ---
+    window.addEventListener('load', function() {
+        popularDropdowns();
+        limparFormulario();
+        listarOficios();
+        updateChartData(); // Carrega os dados do gráfico na inicialização
+    });
+</script>
+</body>
+</html>
